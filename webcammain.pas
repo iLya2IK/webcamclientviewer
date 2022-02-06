@@ -146,6 +146,21 @@ const cBAD = 'BAD';
       cCODE      = 'code';
       cCONFIG    = 'config';
 
+const RESPONSE_ERRORS : Array [0..12] of String = (
+                          'NO_ERROR',
+                          'UNSPECIFIED',
+                          'INTERNAL_UNKNOWN_ERROR',
+                          'DATABASE_FAIL',
+                          'JSON_PARSER_FAIL',
+                          'JSON_FAIL',
+                          'NO_SUCH_SESSION',
+                          'NO_SUCH_USER',
+                          'NO_DEVICES_ONLINE',
+                          'NO_SUCH_RECORD',
+                          'NO_DATA_RETURNED',
+                          'EMPTY_REQUEST',
+                          'MALFORMED_REQUEST');
+
 {$R *.lfm}
 
 function WriteFunctionCallback(ptr: Pointer; size: LongWord;
@@ -590,7 +605,7 @@ end;
 function TMainForm.ConsumeResponseToObj(silent : Boolean) : TJSONObject;
 var jData : TJSONData;
     aResult : String;
-    aCode : Integer;
+    aCode, aRCode : Integer;
 begin
   aCode := -1;
   aResult := cBAD;
@@ -628,7 +643,11 @@ begin
     end;
   finally
     if (aCode > 0) or (not silent) then
-      AddLog('JSON response ' + aResult + ' code ' + inttostr(aCode));
+    begin
+      if aCode > High(RESPONSE_ERRORS) then aRCode := 1 else aRCode := aCode;
+      AddLog('JSON response ' + aResult + ' ' + RESPONSE_ERRORS[aRCode] + '('+
+                                         inttostr(aCode)+')');
+    end;
   end;
 end;
 
