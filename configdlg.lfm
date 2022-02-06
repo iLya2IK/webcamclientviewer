@@ -1,0 +1,53 @@
+object ConfDlg: TConfDlg
+  Left = 376
+  Height = 289
+  Top = 315
+  Width = 423
+  Caption = 'ConfDlg'
+  ClientHeight = 289
+  ClientWidth = 423
+  DoubleBuffered = False
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  ParentDoubleBuffered = False
+  Position = poMainFormCenter
+  LCLVersion = '2.0.12.0'
+  object ToolBar1: TToolBar
+    Left = 0
+    Height = 62
+    Top = 227
+    Width = 423
+    Align = alBottom
+    ButtonHeight = 60
+    ButtonWidth = 60
+    Caption = 'ToolBar1'
+    Flat = False
+    Images = MainForm.ImageList1
+    ShowCaptions = True
+    TabOrder = 0
+    object ToolButton1: TToolButton
+      Left = 1
+      Top = 2
+      Caption = 'Ok'
+      ImageIndex = 8
+      OnClick = ToolButton1Click
+    end
+    object ToolButton2: TToolButton
+      Left = 61
+      Top = 2
+      Caption = 'Cancel'
+      ImageIndex = 5
+      OnClick = ToolButton2Click
+    end
+  end
+  object ConfigGrid: TStringGrid
+    Left = 0
+    Height = 227
+    Top = 0
+    Width = 423
+    Align = alClient
+    FixedCols = 4
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing, goSmoothScroll]
+    TabOrder = 1
+  end
+end
