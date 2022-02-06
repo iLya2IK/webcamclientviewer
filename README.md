@@ -16,5 +16,4 @@ Free Pascal (v3.2.0) + Lazarus (v2.0.10)
 # Copyrights and contributions
 * [cURL](https://curl.se/libcurl)
 * [libPasCURL](https://github.com/isemenkov/libpascurl)
-* [Compact zlib, deflate, inflate, zip library in JavaScript](https://github.com/imaya/zlib.js)
 * [CommonUtils - lightweight lists, collections, seqs and hashes, helping classes for sqlite3 extension, gz compression, data streams - Copyright (c) 2018-2021, Ilya Medvedkov](https://github.com/iLya2IK/commonutils)
