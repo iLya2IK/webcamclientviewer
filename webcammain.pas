@@ -64,6 +64,10 @@ type
     CopyDeviceBtn : TToolButton;
     RefreshRecordsBtn : TToolButton;
     RefreshMsgsBtn : TToolButton;
+    DeleteSelectedBtn : TToolButton;
+    DelSelAndOlderBtn : TToolButton;
+    procedure DeleteSelectedBtnClick(Sender : TObject);
+    procedure DelSelAndOlderBtnClick(Sender : TObject);
     procedure DisconnectBtnClick(Sender : TObject);
     procedure SendMsgBtnClick(Sender : TObject);
     procedure FormCreate(Sender : TObject);
@@ -105,8 +109,10 @@ type
     procedure UpdateDevices;
     procedure UpdateRecords;
     procedure UpdateMsgs;
+    procedure DeleteRecords(aIndices : TJSONArray);
     procedure SendMsg(aMsg : TJSONObject);
     procedure RequestRecord(rid : integer);
+    procedure DeleteSelected(andOlder : Boolean);
 
     procedure AddLog(const STR : String);
 
@@ -257,6 +263,16 @@ end;
 procedure TMainForm.DisconnectBtnClick(Sender : TObject);
 begin
   Disconnect;
+end;
+
+procedure TMainForm.DeleteSelectedBtnClick(Sender : TObject);
+begin
+  DeleteSelected(false);
+end;
+
+procedure TMainForm.DelSelAndOlderBtnClick(Sender : TObject);
+begin
+  DeleteSelected(true);
 end;
 
 procedure TMainForm.FormDestroy(Sender : TObject);
@@ -532,20 +548,21 @@ begin
 
 
       response_code := Integer(curl_multi_add_handle(FCURLM, FCURL));
-      if response_code  = Integer( CURLE_OK ) then
+      if response_code = Integer( CURLE_OK ) then
       begin
         still_running := 0;
 
         repeat
             response_code := Integer(curl_multi_perform(FCURLM, @still_running));
 
-            if (still_running > 0) then
-              response_code := Integer(curl_multi_poll(FCURLM, [], 0, 1000, nil));
+            if ((response_code = Integer( CURLE_OK )) and
+                (still_running > 0)) then
+              response_code := Integer(curl_multi_poll(FCURLM, [], 0, 3000, nil));
 
             if (response_code <> Integer( CURLE_OK )) then
               break;
 
-            Sleep(1);
+            Sleep(10);
         until (still_running = 0);
 
         if response_code = Integer( CURLE_OK ) then
@@ -861,6 +878,29 @@ begin
   end;
 end;
 
+procedure TMainForm.DeleteRecords(aIndices : TJSONArray);
+var aMsg, jObj : TJSONObject;
+begin
+  if assigned(aIndices) then
+  begin
+    aMsg := TJSONObject.Create([cSHASH,   SID,
+                                cRECORDS, aIndices]);
+    try
+      if doPost('/deleteRecords.json', '', aMsg.AsJSON) then
+      begin
+        jObj := ConsumeResponseToObj();
+        if Assigned(jObj) then
+        begin
+          FreeAndNil(jObj);
+        end;
+      end else
+        Disconnect;
+    finally
+      aMsg.Free;
+    end;
+  end;
+end;
+
 procedure TMainForm.SendMsg(aMsg : TJSONObject);
 var
   jObj : TJSONObject;
@@ -901,6 +941,44 @@ begin
       Disconnect;
   finally
     jObj.Free;
+  end;
+end;
+
+procedure TMainForm.DeleteSelected(andOlder : Boolean);
+var
+  arr : TJSONArray;
+  rid_col, i, fstsel : Integer;
+begin
+  arr := TJSONArray.Create;
+  rid_col := -1;
+  for i := 0 to RecordsGrid.ColCount-1 do
+  begin
+    if (SameText(RecordsGrid.Cells[i, 0], cRID)) then
+      rid_col := i;
+  end;
+  if rid_col >= 0 then
+  begin
+    fstsel := -1;
+    for i := 1 to RecordsGrid.RowCount-1 do
+    if RecordsGrid.IsCellSelected[rid_col, i] then
+    begin
+      if fstsel < 0 then fstsel := i;
+      arr.Add(StrToint(RecordsGrid.Cells[rid_col, i]));
+    end;
+    if andOlder then arr.Insert(0, -1);
+    DeleteRecords(arr);
+
+    RecordsGrid.BeginUpdate;
+    try
+      for i := RecordsGrid.RowCount-1 downto 1 do
+      begin
+        if ((i < fstsel) and andOlder) or
+           RecordsGrid.IsCellSelected[rid_col, i] then
+          RecordsGrid.DeleteRow(i);
+      end;
+    finally
+      RecordsGrid.EndUpdate;
+    end;
   end;
 end;
 
