@@ -1,5 +1,5 @@
-# Web Camera Client Viewer
-Desktop HTTP/2 full-featured client for [REST Web Camera Server](https://github.com/iLya2IK/wcwebcamserver) written with Lazarus (Free Pascal)
+# HTTP2 Web Camera Client Viewer
+Desktop HTTP/2 full-featured client for [REST Web Camera Server](https://github.com/iLya2IK/wcwebcamserver) written with Lazarus (Free Pascal). A detailed implementation of an external device based on "ESP32-CAM" is given in the example [webcamdevice](https://github.com/iLya2IK/webcamdevice).
 ![alt text](https://github.com/iLya2IK/webcamclientviewer/blob/main/screenshots/Screenshot_20220206_183144.png?raw=true)
 
 ## Development environment
