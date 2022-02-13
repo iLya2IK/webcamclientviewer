@@ -503,6 +503,7 @@ var
   contentsize : integer;
   headers : pcurl_slist;
   still_running : Longint;
+  times : integer;
 begin
   Result := false;
 
@@ -545,13 +546,13 @@ begin
         curl_easy_setopt(FCURL, CURLOPT_INFILESIZE, Longint(contentsize));
       end;
       curl_easy_setopt(FCURL, CURLOPT_ERRORBUFFER, PChar(ErrorBuffer));
-
+      FillChar(ErrorBuffer, CURL_ERROR_SIZE, #0);
 
       response_code := Integer(curl_multi_add_handle(FCURLM, FCURL));
       if response_code = Integer( CURLE_OK ) then
       begin
         still_running := 0;
-
+        times := 0;
         repeat
             response_code := Integer(curl_multi_perform(FCURLM, @still_running));
 
@@ -563,14 +564,20 @@ begin
               break;
 
             Sleep(10);
-        until (still_running = 0);
+            Inc(times);
+        until (still_running = 0) or (times > 100);
 
         if response_code = Integer( CURLE_OK ) then
         begin
+          if Length(StrPas(@(ErrorBuffer[0]))) > 0 then
+            AddLog(ErrorBuffer);
+
           curl_easy_getinfo(FCURL, CURLINFO_RESPONSE_CODE, @response_code);
-          if not silent then
-            AddLog(Format('HTTP2 "%s" OK. Code - %d', [aPath, response_code]));
-          Result := true;
+          if (not silent) or (response_code <> 200) then
+            AddLog(Format('HTTP2 "%s". Code - %d', [aPath, response_code]));
+
+          if response_code = 200 then
+            Result := true;
         end else
         begin
           AddLog(Format('HTTP2 "%s" FAIL. Code - %d', [aPath, response_code]));
