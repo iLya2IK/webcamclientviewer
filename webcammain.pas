@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, ValEdit,
-  ComCtrls, StdCtrls, Grids, JSONPropStorage, Buttons, libpascurl,
+  ComCtrls, StdCtrls, Grids, JSONPropStorage, Buttons, ExtDlgs, libpascurl,
   BufferedStream, fpjson, jsonparser;
 
 type
@@ -26,6 +26,7 @@ type
     Label3 : TLabel;
     Label4 : TLabel;
     Label5 : TLabel;
+    OpenPictureDialog1: TOpenPictureDialog;
     RecordLabel : TLabel;
     LogMemo : TMemo;
     MsgContent : TValueListEditor;
@@ -66,6 +67,7 @@ type
     RefreshMsgsBtn : TToolButton;
     DeleteSelectedBtn : TToolButton;
     DelSelAndOlderBtn : TToolButton;
+    ToolButton2: TToolButton;
     procedure DeleteSelectedBtnClick(Sender : TObject);
     procedure DelSelAndOlderBtnClick(Sender : TObject);
     procedure DisconnectBtnClick(Sender : TObject);
@@ -84,6 +86,7 @@ type
     procedure CopyDeviceBtnClick(Sender : TObject);
     procedure RefreshRecordsBtnClick(Sender : TObject);
     procedure RefreshMsgsBtnClick(Sender : TObject);
+    procedure ToolButton2Click(Sender: TObject);
   private
     procedure SetConnected(AValue : Boolean);
   private
@@ -96,6 +99,9 @@ type
     LastMsgsStamp, LastRecsStamp : String;
     function doPost(const aPath, aReqQuery, aContent : String;
                           silent : Boolean = true) : Boolean;
+    function doPost(const aPath, aReqQuery : String;
+      aContent : Pointer; aContentSize : Int64;
+      silent : Boolean) : Boolean;
     function GetDevice : String;
     function GetHost : String;
     function GetSID : String;
@@ -113,6 +119,7 @@ type
     procedure SendMsg(aMsg : TJSONObject);
     procedure RequestRecord(rid : integer);
     procedure DeleteSelected(andOlder : Boolean);
+    procedure SaveAsSnapshot(const aFileName : String);
 
     procedure AddLog(const STR : String);
 
@@ -179,6 +186,49 @@ function ReadFunctionCallback(ptr: Pointer; size: LongWord;
   nmemb: LongWord; data: Pointer): LongWord; cdecl;
 begin
   Result := TMainForm(data).Read(ptr, size, nmemb);
+end;
+
+function HTTPEncode(const AStr: String): String;
+
+const
+  HTTPAllowed = ['A'..'Z','a'..'z',
+                 '*','@','.','_','-',
+                 '0'..'9',
+                 '$','!','''','(',')'];
+
+var
+  SS,S,R: PChar;
+  H : String[2];
+  L : Integer;
+
+begin
+  L:=Length(AStr);
+  Result:='';
+  if (L=0) then exit;
+
+  SetLength(Result,L*3); // Worst case scenario
+  R:=PChar(Result);
+  S:=PChar(AStr);
+  SS:=S; // Avoid #0 limit !!
+  while ((S-SS)<L) do
+    begin
+    if S^ in HTTPAllowed then
+      R^:=S^
+    else if (S^=' ') then
+      R^:='+'
+    else
+      begin
+      R^:='%';
+      H:=HexStr(Ord(S^),2);
+      Inc(R);
+      R^:=H[1];
+      Inc(R);
+      R^:=H[2];
+      end;
+    Inc(R);
+    Inc(S);
+    end;
+  SetLength(Result,R-PChar(Result));
 end;
 
 { TMainForm }
@@ -283,11 +333,13 @@ begin
   begin
     AppConfig.WriteString(AuthOpts.Keys[i], AuthOpts.Cells[1, i]);
   end;
+
   if Assigned(FCURL) then curl_easy_cleanup(FCURL);
   if Assigned(FCURLM) then curl_multi_cleanup(FCURLM);
   if Assigned(FResponse) then  FResponse.Free;
   if Assigned(FRequest) then  FRequest.Free;
   curl_global_cleanup();
+
   Timer1.Enabled := false;
   LongTimer.Enabled := false;
 end;
@@ -423,9 +475,8 @@ begin
     jObj := ConsumeResponseToObj;
     if Assigned(jObj) then
     begin
-      if jObj.Find(cCONFIG, jArr) then
       try
-        if ConfDlg.Execute(jArr) then
+        if jObj.Find(cCONFIG, jArr) and ConfDlg.Execute(jArr) then
         begin
           jRes := TJSONObject.Create([cSHASH, SID,
                                       cCONFIG, ConfDlg.ResultConf]);
@@ -471,6 +522,14 @@ begin
   UpdateMsgs;
 end;
 
+procedure TMainForm.ToolButton2Click(Sender: TObject);
+begin
+  if OpenPictureDialog1.Execute then
+  begin
+    SaveAsSnapshot(OpenPictureDialog1.FileName);
+  end;
+end;
+
 procedure TMainForm.SetConnected(AValue : Boolean);
 
 procedure SetEnabled(TB : TToolBar; en : Boolean);
@@ -497,10 +556,18 @@ end;
 
 function TMainForm.doPost(const aPath, aReqQuery, aContent : String;
   silent : Boolean) : Boolean;
+var ptr : Pointer;
+begin
+  if Length(aContent) > 0 then ptr := @(aContent[1]) else ptr := nil;
+  Result := doPost(aPath, aReqQuery, ptr, Length(aContent), silent);
+end;
+
+function TMainForm.doPost(const aPath, aReqQuery : String;
+  aContent : Pointer; aContentSize : Int64;
+  silent : Boolean) : Boolean;
 var
   ErrorBuffer : array [0 .. CURL_ERROR_SIZE] of char;
   response_code : Longint;
-  contentsize : integer;
   headers : pcurl_slist;
   still_running : Longint;
   times : integer;
@@ -532,18 +599,17 @@ begin
       curl_easy_setopt(FCURL, CURLOPT_WRITEDATA, Pointer(Self));
       curl_easy_setopt(FCURL, CURLOPT_WRITEFUNCTION,
          @WriteFunctionCallback);
-      contentsize := Length(aContent);
       headers := nil;
-      headers := curl_slist_append(headers, Pchar('content-length: ' + inttostr(contentsize)));
+      headers := curl_slist_append(headers, Pchar('content-length: ' + inttostr(aContentSize)));
       curl_easy_setopt(FCURL, CURLOPT_HTTPHEADER, headers);
       curl_easy_setopt(FCURL, CURLOPT_PIPEWAIT, Longint(1));
 
-      if (contentsize > 0) then begin
-        FRequest.SetPtr(@(aContent[1]), contentsize);
+      if (aContentSize > 0) then begin
+        FRequest.SetPtr(aContent, aContentSize);
         curl_easy_setopt(FCURL, CURLOPT_READDATA, Pointer(Self));
         curl_easy_setopt(FCURL, CURLOPT_READFUNCTION,
            @ReadFunctionCallback);
-        curl_easy_setopt(FCURL, CURLOPT_INFILESIZE, Longint(contentsize));
+        curl_easy_setopt(FCURL, CURLOPT_INFILESIZE, Longint(aContentSize));
       end;
       curl_easy_setopt(FCURL, CURLOPT_ERRORBUFFER, PChar(ErrorBuffer));
       FillChar(ErrorBuffer, CURL_ERROR_SIZE, #0);
@@ -642,6 +708,7 @@ begin
         if (jData is TJSONObject) then
         begin
           Result := TJSONObject(jData);
+
           if Result.Find(cRESULT, jData) then
           begin
             aResult := jData.AsString;
@@ -659,7 +726,7 @@ begin
             FreeAndNil(Result);
           end;
         end else
-          if assigned(jData) then jData.Free;
+          if assigned(jData) then FreeAndNil(jData);
       except
         Result := nil;
         aResult := cBAD;
@@ -755,7 +822,7 @@ begin
     begin
       jObj := ConsumeResponseToObj();
       if Assigned(jObj) then
-      begin
+      try
         jArr := TJSONArray(jObj.Find(cRECORDS));
         off := RecordsGrid.RowCount;
         RecordsGrid.RowCount := jArr.Count + off;
@@ -797,6 +864,8 @@ begin
             end;
           end;
         end;
+      finally
+        jObj.Free;
       end;
     end else
       Disconnect;
@@ -825,7 +894,7 @@ begin
     begin
       jObj := ConsumeResponseToObj();
       if Assigned(jObj) then
-      begin
+      try
         jArr := TJSONArray(jObj.Find(cMSGS));
         if assigned(jArr) then
         begin
@@ -877,6 +946,8 @@ begin
             end;
           end;
         end;
+      finally
+        jObj.Free;
       end;
     end else
       Disconnect;
@@ -948,6 +1019,38 @@ begin
       Disconnect;
   finally
     jObj.Free;
+  end;
+end;
+
+procedure TMainForm.SaveAsSnapshot(const aFileName: String);
+var
+  FS : TFileStream;
+  Buf : Pointer;
+  Sz : Int64;
+begin
+  Buf := nil;
+  try
+    FS := TFileStream.Create(aFileName, fmOpenRead);
+    try
+      Sz := FS.Size;
+      FS.Position := 0;
+      Buf := GetMem(Sz);
+      if Assigned(Buf) then
+        FS.Read(Buf^, Sz) else
+      begin
+        AddLog('Cant allocate memory');
+        Exit;
+      end;
+    finally
+      FS.Free;
+    end;
+    if doPost('/addRecord.json?'+cSHASH+'='+HTTPEncode(SID), '', Buf, Sz, true) then
+    begin
+      AddLog(aFileName + ' sended successful');
+    end else
+      Disconnect;
+  finally
+    if Assigned(Buf) then Freemem(Buf);
   end;
 end;
 

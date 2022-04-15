@@ -10,7 +10,7 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   ParentDoubleBuffered = False
-  LCLVersion = '2.0.12.0'
+  LCLVersion = '2.0.10.0'
   object Panel1: TPanel
     Left = 209
     Height = 635
@@ -53,19 +53,18 @@ object MainForm: TMainForm
           TabOrder = 0
           object DeviceList: TListBox
             Left = 0
-            Height = 97
-            Top = 45
+            Height = 101
+            Top = 41
             Width = 246
             Align = alClient
             ItemHeight = 0
             ScrollWidth = 244
             TabOrder = 0
-            TopIndex = -1
           end
           object DevicesToolbar: TToolBar
             Left = 0
             Height = 26
-            Top = 19
+            Top = 15
             Width = 246
             Caption = 'DevicesToolbar'
             EdgeInner = esNone
@@ -92,16 +91,16 @@ object MainForm: TMainForm
             end
             object DevicesAU: TCheckBox
               Left = 47
-              Height = 23
+              Height = 19
               Top = 0
-              Width = 100
+              Width = 83
               Caption = 'Autoupdate'
               TabOrder = 0
             end
           end
           object Label1: TLabel
             Left = 0
-            Height = 19
+            Height = 15
             Top = 0
             Width = 246
             Align = alTop
@@ -139,7 +138,7 @@ object MainForm: TMainForm
             )
             ColWidths = (
               90
-              181
+              179
             )
           end
           object ToolBar1: TToolBar
@@ -165,14 +164,14 @@ object MainForm: TMainForm
             end
             object ConfigClientBtn: TToolButton
               Left = 1
-              Top = 90
+              Top = 84
               Caption = 'Config'
               ImageIndex = 1
               OnClick = ConfigClientBtnClick
             end
             object DisconnectBtn: TToolButton
               Left = 1
-              Top = 45
+              Top = 42
               Caption = 'Disconnect'
               ImageIndex = 5
               OnClick = DisconnectBtnClick
@@ -202,7 +201,7 @@ object MainForm: TMainForm
         TabOrder = 0
         object Label2: TLabel
           Left = 1
-          Height = 19
+          Height = 15
           Top = 1
           Width = 275
           Align = alTop
@@ -212,7 +211,7 @@ object MainForm: TMainForm
         object MsgHeader: TValueListEditor
           Left = 1
           Height = 93
-          Top = 20
+          Top = 16
           Width = 275
           Align = alTop
           DefaultColWidth = 90
@@ -225,13 +224,13 @@ object MainForm: TMainForm
           )
           ColWidths = (
             90
-            183
+            181
           )
         end
         object Label3: TLabel
           Left = 1
-          Height = 19
-          Top = 113
+          Height = 15
+          Top = 109
           Width = 275
           Align = alTop
           Caption = 'Additional params'
@@ -239,8 +238,8 @@ object MainForm: TMainForm
         end
         object MsgContent: TValueListEditor
           Left = 1
-          Height = 232
-          Top = 132
+          Height = 240
+          Top = 124
           Width = 275
           Align = alClient
           DefaultColWidth = 90
@@ -252,7 +251,7 @@ object MainForm: TMainForm
           Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goEditing, goAutoAddRows, goAlwaysShowEditor, goThumbTracking]
           ColWidths = (
             90
-            183
+            181
           )
         end
         object SendMsgBtn: TSpeedButton
@@ -289,7 +288,7 @@ object MainForm: TMainForm
           object MsgsToolbar: TToolBar
             Left = 1
             Height = 23
-            Top = 20
+            Top = 16
             Width = 312
             Caption = 'MsgsToolbar'
             Images = ImageList1
@@ -314,9 +313,9 @@ object MainForm: TMainForm
             end
             object MsgsAU: TCheckBox
               Left = 47
-              Height = 23
+              Height = 19
               Top = 2
-              Width = 100
+              Width = 83
               Caption = 'Autoupdate'
               Checked = True
               State = cbChecked
@@ -325,8 +324,8 @@ object MainForm: TMainForm
           end
           object MsgsGrid: TStringGrid
             Left = 1
-            Height = 109
-            Top = 43
+            Height = 113
+            Top = 39
             Width = 312
             Align = alClient
             AutoEdit = False
@@ -336,7 +335,7 @@ object MainForm: TMainForm
           end
           object Label5: TLabel
             Left = 1
-            Height = 19
+            Height = 15
             Top = 1
             Width = 312
             Align = alTop
@@ -355,8 +354,8 @@ object MainForm: TMainForm
           TabOrder = 1
           object RecordsGrid: TStringGrid
             Left = 1
-            Height = 183
-            Top = 43
+            Height = 187
+            Top = 39
             Width = 312
             Align = alClient
             AutoEdit = False
@@ -368,7 +367,7 @@ object MainForm: TMainForm
           object RecordsToolbar: TToolBar
             Left = 1
             Height = 23
-            Top = 20
+            Top = 16
             Width = 312
             Caption = 'RecordsToolbar'
             Images = ImageList1
@@ -384,15 +383,15 @@ object MainForm: TMainForm
               OnClick = RefreshRecordsBtnClick
             end
             object RecsAU: TCheckBox
-              Left = 70
-              Height = 23
+              Left = 93
+              Height = 19
               Top = 2
-              Width = 100
+              Width = 83
               Caption = 'Autoupdate'
               TabOrder = 0
             end
             object DeleteSelectedBtn: TToolButton
-              Left = 24
+              Left = 47
               Hint = 'Delete selected'
               Top = 2
               Caption = 'DeleteSelectedBtn'
@@ -400,17 +399,24 @@ object MainForm: TMainForm
               OnClick = DeleteSelectedBtnClick
             end
             object DelSelAndOlderBtn: TToolButton
-              Left = 47
+              Left = 70
               Hint = 'Delete selected and older'
               Top = 2
               Caption = 'DelSelAndOlderBtn'
               ImageIndex = 10
               OnClick = DelSelAndOlderBtnClick
             end
+            object ToolButton2: TToolButton
+              Left = 24
+              Top = 2
+              Caption = 'SendPictureButton'
+              ImageIndex = 11
+              OnClick = ToolButton2Click
+            end
           end
           object Label4: TLabel
             Left = 1
-            Height = 19
+            Height = 15
             Top = 1
             Width = 312
             Align = alTop
@@ -508,7 +514,7 @@ object MainForm: TMainForm
     Left = 308
     Top = 195
     Bitmap = {
-      4C690B00000010000000100000000660992D0A639CBA035990A6005B920E0000
+      4C690C00000010000000100000000660992D0A639CBA035990A6005B920E0000
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000000000000008639CBA32A6EDFF1E83C2FF045890CA0050
       8F10000000000000000000000000000000000000000000000000000000000000
@@ -860,7 +866,39 @@ object MainForm: TMainForm
       2FFFBD987BFFEDEDEDFFECECECFFEBEBEBFFEBEBEBFFEAEAEAFFE9E9E9FF4F53
       51FF00000000000000000000000000000000000000005A5D5CFF585C5AFF575A
       59FF555957FF535755FF525554FF505452FF505351FF4F5351FF4F5351FF5053
-      51FF000000000000000000000000
+      51FF0000000000000000000000000000000000000000000000001E1E91FF0000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000000000000000000000000000000000001E1E91FF1E1E91FF0000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000001E1E91FF1E1E91FF1E1E91FF1E1E
+      91FF1E1E91CA1E1E917F1E1E910B000000000000000000000000000000000000
+      00000000000000000000000000001E1E91FF1E1E91FF1E1E91FF1E1E91FF1E1E
+      91FF1E1E91FF1E1E91FF1E1E91E01E1E91340000000000000000000000000000
+      0000000000000000000000000000000000001E1E91FF1E1E91FF1E1E91FF1E1E
+      91FF1E1E91FF1E1E91FF1E1E91FF1E1E91EE1E1E912B00000000000000000000
+      000000000000000000000000000000000000000000001E1E91FF1E1E91FF1E1E
+      91141E1E912F1E1E916A1E1E91C41E1E91FF1E1E91C41E1E9103000000000000
+      00000000000000000000000000000000000000000000000000001E1E91FF0000
+      000000000000B16734FF9A6F8EFF4B49D5FF25259CFF805E93FFBB6A36FFBD6E
+      3BFFBB6D3AFFBB7241FFBD75444E000000000000000000000000000000000000
+      000000000000BB6D39FFE9AA80FFE6E1F2FF5F5DDEFF7F7BC8FFFCF6F2FFFCF6
+      F1FFF9ECE2FFEED0BAFFBB713FFE000000000000000000000000000000000000
+      000000000000BC6C37FFE8A87EFFFCF6F1FFD1A384FFF1EBEAFFFDFAF7FFFAF0
+      E8FFF8E8DDFFE1A37AFFB76935FF000000000000000000000000000000000000
+      000000000000BB6B36FFE7A77DFFF9ECE1FFF9EDE3FFFDFAF7FFFDF7F3FFF7E7
+      DBFFF7E5D9FFDEA077FFB46734FF000000000000000000000000000000000000
+      000000000000BB6A36FFE3A47BFFE3A37AFFE2A47BFFE1A37BFFE1A279FFDE9F
+      76FFDD9E74FFDC9D74FFB16534FF000000000000000000000000000000000000
+      000000000000BB6A36FFE3A37AFFE3A37AFFE2A37BFFE1A279FFE0A178FFDE9E
+      75FFDC9D74FFD99B73FFAF6433FF000000000000000000000000000000000000
+      000000000000BA6A36FFE2A27AFFFEFBF8FFFEFBF8FFFEFBF8FFFEFBF8FFFEFB
+      F8FFFEFBF8FFD3966DFFAB6232FF000000000000000000000000000000000000
+      000000000000BB6B38FFE1A279FFFEFAF7FF62C088FF62C088FF62C088FF62C0
+      88FF62C088FFCF936AFFAA6132FF000000000000000000000000000000000000
+      000000000000BA6B37FFE0A27AFFFEFAF7FF62C088FF62C088FF62C088FF62C0
+      88FF62C088FFCA8D65FFA76031FF000000000000000000000000000000000000
+      000000000000B96D3BE6B96C38FFB76835FFB46734FFB06533FFAE6433FFAA62
+      32FFA96132FFA76031FFA96435F6
     }
   end
   object Timer1: TTimer
@@ -883,5 +921,9 @@ object MainForm: TMainForm
     OnTimer = LongTimerTimer
     Left = 472
     Top = 328
+  end
+  object OpenPictureDialog1: TOpenPictureDialog
+    Left = 308
+    Top = 261
   end
 end
