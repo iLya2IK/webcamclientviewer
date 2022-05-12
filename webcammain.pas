@@ -505,10 +505,25 @@ begin
 end;
 
 procedure TMainForm.CopyDeviceBtnClick(Sender : TObject);
+var
+  jObj : TJSONData;
+  S : String;
 begin
   if DeviceList.ItemIndex >= 0 then
   begin
-    Clipboard.AsText := DeviceList.Items[DeviceList.ItemIndex];
+    S := DeviceList.Items[DeviceList.ItemIndex];
+    try
+      jObj := GetJSON(S);
+      if Assigned(jObj) then
+      begin
+        if jObj is TJSONObject then
+          S := TJSONObject(jObj).Get(cDEVICE, S) else
+          S := jObj.AsString;
+        jObj.Free;
+      end;
+    finally
+      Clipboard.AsText := S;
+    end;
   end;
 end;
 
@@ -789,7 +804,7 @@ begin
         begin
           for i := 0 to jArr.Count-1 do
           begin
-            DeviceList.Items.Add(jarr.Items[i].AsString);
+            DeviceList.Items.Add(jarr.Items[i].AsJSON);
           end;
         end;
         FreeAndNil(jObj);

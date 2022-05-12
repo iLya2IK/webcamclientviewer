@@ -10,7 +10,7 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   ParentDoubleBuffered = False
-  LCLVersion = '2.0.10.0'
+  LCLVersion = '2.0.12.0'
   object Panel1: TPanel
     Left = 209
     Height = 635
@@ -53,18 +53,19 @@ object MainForm: TMainForm
           TabOrder = 0
           object DeviceList: TListBox
             Left = 0
-            Height = 101
-            Top = 41
+            Height = 97
+            Top = 45
             Width = 246
             Align = alClient
             ItemHeight = 0
             ScrollWidth = 244
             TabOrder = 0
+            TopIndex = -1
           end
           object DevicesToolbar: TToolBar
             Left = 0
             Height = 26
-            Top = 15
+            Top = 19
             Width = 246
             Caption = 'DevicesToolbar'
             EdgeInner = esNone
@@ -91,16 +92,16 @@ object MainForm: TMainForm
             end
             object DevicesAU: TCheckBox
               Left = 47
-              Height = 19
+              Height = 23
               Top = 0
-              Width = 83
+              Width = 100
               Caption = 'Autoupdate'
               TabOrder = 0
             end
           end
           object Label1: TLabel
             Left = 0
-            Height = 15
+            Height = 19
             Top = 0
             Width = 246
             Align = alTop
@@ -138,7 +139,7 @@ object MainForm: TMainForm
             )
             ColWidths = (
               90
-              179
+              181
             )
           end
           object ToolBar1: TToolBar
@@ -164,14 +165,14 @@ object MainForm: TMainForm
             end
             object ConfigClientBtn: TToolButton
               Left = 1
-              Top = 84
+              Top = 90
               Caption = 'Config'
               ImageIndex = 1
               OnClick = ConfigClientBtnClick
             end
             object DisconnectBtn: TToolButton
               Left = 1
-              Top = 42
+              Top = 45
               Caption = 'Disconnect'
               ImageIndex = 5
               OnClick = DisconnectBtnClick
@@ -201,7 +202,7 @@ object MainForm: TMainForm
         TabOrder = 0
         object Label2: TLabel
           Left = 1
-          Height = 15
+          Height = 19
           Top = 1
           Width = 275
           Align = alTop
@@ -211,7 +212,7 @@ object MainForm: TMainForm
         object MsgHeader: TValueListEditor
           Left = 1
           Height = 93
-          Top = 16
+          Top = 20
           Width = 275
           Align = alTop
           DefaultColWidth = 90
@@ -224,13 +225,13 @@ object MainForm: TMainForm
           )
           ColWidths = (
             90
-            181
+            183
           )
         end
         object Label3: TLabel
           Left = 1
-          Height = 15
-          Top = 109
+          Height = 19
+          Top = 113
           Width = 275
           Align = alTop
           Caption = 'Additional params'
@@ -238,8 +239,8 @@ object MainForm: TMainForm
         end
         object MsgContent: TValueListEditor
           Left = 1
-          Height = 240
-          Top = 124
+          Height = 232
+          Top = 132
           Width = 275
           Align = alClient
           DefaultColWidth = 90
@@ -251,7 +252,7 @@ object MainForm: TMainForm
           Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goEditing, goAutoAddRows, goAlwaysShowEditor, goThumbTracking]
           ColWidths = (
             90
-            181
+            183
           )
         end
         object SendMsgBtn: TSpeedButton
@@ -288,7 +289,7 @@ object MainForm: TMainForm
           object MsgsToolbar: TToolBar
             Left = 1
             Height = 23
-            Top = 16
+            Top = 20
             Width = 312
             Caption = 'MsgsToolbar'
             Images = ImageList1
@@ -313,9 +314,9 @@ object MainForm: TMainForm
             end
             object MsgsAU: TCheckBox
               Left = 47
-              Height = 19
+              Height = 23
               Top = 2
-              Width = 83
+              Width = 100
               Caption = 'Autoupdate'
               Checked = True
               State = cbChecked
@@ -324,8 +325,8 @@ object MainForm: TMainForm
           end
           object MsgsGrid: TStringGrid
             Left = 1
-            Height = 113
-            Top = 39
+            Height = 109
+            Top = 43
             Width = 312
             Align = alClient
             AutoEdit = False
@@ -335,7 +336,7 @@ object MainForm: TMainForm
           end
           object Label5: TLabel
             Left = 1
-            Height = 15
+            Height = 19
             Top = 1
             Width = 312
             Align = alTop
@@ -354,8 +355,8 @@ object MainForm: TMainForm
           TabOrder = 1
           object RecordsGrid: TStringGrid
             Left = 1
-            Height = 187
-            Top = 39
+            Height = 183
+            Top = 43
             Width = 312
             Align = alClient
             AutoEdit = False
@@ -367,7 +368,7 @@ object MainForm: TMainForm
           object RecordsToolbar: TToolBar
             Left = 1
             Height = 23
-            Top = 16
+            Top = 20
             Width = 312
             Caption = 'RecordsToolbar'
             Images = ImageList1
@@ -384,9 +385,9 @@ object MainForm: TMainForm
             end
             object RecsAU: TCheckBox
               Left = 93
-              Height = 19
+              Height = 23
               Top = 2
-              Width = 83
+              Width = 100
               Caption = 'Autoupdate'
               TabOrder = 0
             end
@@ -416,7 +417,7 @@ object MainForm: TMainForm
           end
           object Label4: TLabel
             Left = 1
-            Height = 15
+            Height = 19
             Top = 1
             Width = 312
             Align = alTop
