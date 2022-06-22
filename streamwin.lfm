@@ -1,0 +1,26 @@
+object StreamFrm: TStreamFrm
+  Left = 574
+  Height = 312
+  Top = 131
+  Width = 349
+  Caption = 'StreamFrm'
+  ClientHeight = 312
+  ClientWidth = 349
+  OnCreate = FormCreate
+  LCLVersion = '2.2.2.0'
+  object Image1: TImage
+    Left = 0
+    Height = 311
+    Top = 1
+    Width = 349
+    Align = alClient
+  end
+  object Label1: TLabel
+    Left = 0
+    Height = 1
+    Top = 0
+    Width = 349
+    Align = alTop
+    ParentColor = False
+  end
+end

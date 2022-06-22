@@ -10,7 +10,7 @@ uses
   {$ENDIF}{$ENDIF}
   sysutils, FileUtil,
   Interfaces, // this includes the LCL widgetset
-  Forms, webcammain, configdlg
+  Forms, webcammain, configdlg, streamwin
   { you can add units after this };
 
 {$R *.res}
