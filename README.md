@@ -11,7 +11,8 @@ Free Pascal (v3.2.0) + Lazarus (v2.0.10)
 
 ## Additional libraries (to build from sources)
 3. CommonUtils - you can download lpk and sources [here](https://github.com/iLya2IK/commonutils)
-4. libPasCURL -  you can download sources [here](https://github.com/isemenkov/libpascurl)
+4. libPasCURL -  you can download lpk and sources [here](https://github.com/iLya2IK/libpascurl)
+5. wcCURLclient -  you can download lpk and sources [here](https://github.com/iLya2IK/wccurlclient)
 
 # Copyrights and contributions
 * [cURL](https://curl.se/libcurl)
