@@ -57,7 +57,9 @@ object MainForm: TMainForm
             Width = 246
             Align = alClient
             ItemHeight = 0
+            OnDrawItem = DeviceListDrawItem
             ScrollWidth = 244
+            Style = lbOwnerDrawFixed
             TabOrder = 0
             TopIndex = -1
           end
@@ -124,30 +126,6 @@ object MainForm: TMainForm
           ClientHeight = 144
           ClientWidth = 312
           TabOrder = 1
-          object AuthOpts: TValueListEditor
-            Left = 32
-            Height = 144
-            Top = 0
-            Width = 280
-            Align = alClient
-            DefaultColWidth = 90
-            FixedCols = 0
-            RowCount = 5
-            TabOrder = 0
-            OnEditingDone = AuthOptsEditingDone
-            DisplayOptions = [doAutoColResize, doKeyColFixed]
-            Strings.Strings = (
-              'Server=https://localhost:8080'
-              'User name=user'
-              'Password=111'
-              'Device=device_name'
-              'SessionID='
-            )
-            ColWidths = (
-              90
-              188
-            )
-          end
           object ToolBar1: TToolBar
             Left = 0
             Height = 144
@@ -161,7 +139,7 @@ object MainForm: TMainForm
             EdgeOuter = esNone
             Images = ImageList1
             ShowCaptions = True
-            TabOrder = 1
+            TabOrder = 0
             object AuthToServerBtn: TToolButton
               Left = 1
               Hint = 'Connect'
@@ -195,6 +173,56 @@ object MainForm: TMainForm
               OnClick = LaunchStreamBtnClick
               ParentShowHint = False
               ShowHint = True
+            end
+          end
+          object Panel12: TPanel
+            Left = 32
+            Height = 144
+            Top = 0
+            Width = 280
+            Align = alClient
+            BevelOuter = bvNone
+            ClientHeight = 144
+            ClientWidth = 280
+            TabOrder = 1
+            object AuthOpts: TValueListEditor
+              Left = 0
+              Height = 121
+              Top = 0
+              Width = 280
+              Align = alClient
+              DefaultColWidth = 90
+              FixedCols = 0
+              RowCount = 7
+              TabOrder = 0
+              OnClick = AuthOptsClick
+              OnEditingDone = AuthOptsEditingDone
+              DisplayOptions = [doAutoColResize, doKeyColFixed]
+              Strings.Strings = (
+                'Server=https://localhost:8080'
+                'Proxy='
+                'User name=user'
+                'Password=111'
+                'Device=device_name'
+                'MetaData='
+                'SessionID='
+              )
+              ColWidths = (
+                90
+                175
+              )
+            end
+            object VerifyTSLCB: TCheckBox
+              Left = 0
+              Height = 23
+              Top = 121
+              Width = 280
+              Align = alBottom
+              Caption = 'Verify TSL'
+              Checked = True
+              OnChange = VerifyTSLCBChange
+              State = cbChecked
+              TabOrder = 1
             end
           end
         end

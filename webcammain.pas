@@ -9,7 +9,7 @@ uses
   ComCtrls, StdCtrls, Grids, JSONPropStorage, Buttons, ExtDlgs,
   fpjson, jsonparser,
   wccurlclient,
-  ECommonObjs;
+  ECommonObjs, Types, LCLType;
 
 type
 
@@ -18,6 +18,7 @@ type
   TMainForm = class(TForm)
     AuthOpts : TValueListEditor;
     AuthToServerBtn : TToolButton;
+    VerifyTSLCB : TCheckBox;
     DeviceList : TListBox;
     DevicesAU : TCheckBox;
     Image1 : TImage;
@@ -29,6 +30,7 @@ type
     Label4 : TLabel;
     Label5 : TLabel;
     OpenPictureDialog1: TOpenPictureDialog;
+    Panel12 : TPanel;
     RecordLabel : TLabel;
     LogMemo : TMemo;
     MsgContent : TValueListEditor;
@@ -73,9 +75,12 @@ type
     ToolButton2: TToolButton;
     LaunchStreamBtn : TToolButton;
     LaunchInStrm : TToolButton;
+    procedure AuthOptsClick(Sender : TObject);
     procedure AuthOptsEditingDone(Sender : TObject);
     procedure DeleteSelectedBtnClick(Sender : TObject);
     procedure DelSelAndOlderBtnClick(Sender : TObject);
+    procedure DeviceListDrawItem(Control : TWinControl; Index : Integer;
+      ARect : TRect; State : TOwnerDrawState);
     procedure DisconnectBtnClick(Sender : TObject);
     procedure LaunchInStrmClick(Sender : TObject);
     procedure LaunchStreamBtnClick(Sender : TObject);
@@ -94,6 +99,7 @@ type
     procedure RefreshRecordsBtnClick(Sender : TObject);
     procedure RefreshMsgsBtnClick(Sender : TObject);
     procedure ToolButton2Click(Sender: TObject);
+    procedure VerifyTSLCBChange(Sender : TObject);
   private
     CURLClient : TWCCURLClient;
 
@@ -104,6 +110,7 @@ type
     procedure OnSetSID(const AValue : String);
     procedure OnSuccessAuth({%H-}aTask : THTTP2BackgroundTask; {%H-}aObj : TJSONObject);
     procedure OnSuccessUpdateDevices({%H-}aTask : THTTP2BackgroundTask; aArr : TJSONArray);
+    procedure OnSuccessUpdateStreams({%H-}aTask : THTTP2BackgroundTask; aArr : TJSONArray);
     procedure OnSuccessUpdateMsgs({%H-}aTask : THTTP2BackgroundTask; aArr : TJSONArray);
     procedure OnSuccessUpdateRecords({%H-}aTask : THTTP2BackgroundTask; aArr : TJSONArray);
     procedure OnSuccessSendMsg({%H-}aTask : THTTP2BackgroundTask; {%H-}aObj : TJSONObject);
@@ -118,10 +125,15 @@ type
     procedure GenNewFrame;
     procedure OnStrmWinClose(Sender: TObject; var {%H-}CloseAction: TCloseAction);
   private
+    FStreamingDevices : TStringList;
+    procedure StreamingDevicesChange(Sender : TObject);
+
     function GetSelectedDeviceName : String;
     function GetRidCol : Integer;
     procedure DeleteSelected(andolder : Boolean);
 
+    function GetProxy : String;
+    function GetMeta : String;
     function GetDevice : String;
     function GetHost : String;
     function GetSID : String;
@@ -135,6 +147,14 @@ implementation
 uses LazUTF8, Clipbrd, configdlg, streamwin, wcwebcamconsts;
 
 {$R *.lfm}
+
+const HOST_POS = 0;
+      PROXY_POS = 1;
+      USER_POS = 2;
+      PWRD_POS = 3;
+      DEVICE_POS = 4;
+      META_POS = 5;
+      SID_POS = 6;
 
 { TMainForm }
 
@@ -151,6 +171,7 @@ begin
   CURLClient.OnAddLog := @AddLog;
   CURLClient.OnSuccessAuth := @OnSuccessAuth;
   CURLClient.OnSuccessUpdateDevices := @OnSuccessUpdateDevices;
+  CURLClient.OnSuccessUpdateStreams := @OnSuccessUpdateStreams;
   CURLClient.OnSuccessUpdateMsgs := @OnSuccessUpdateMsgs;
   CURLClient.OnSuccessUpdateRecords := @OnSuccessUpdateRecords;
   CURLClient.OnSuccessSendMsg := @OnSuccessSendMsg;
@@ -164,8 +185,12 @@ begin
   CURLClient.OnSynchroUpdateTask := @OnSynchroUpdateTask;
   CURLClient.OnSuccessIOStream := @OnSuccessIOStream;
 
+  FStreamingDevices := TStringList.Create;
+  FStreamingDevices.OnChange := @StreamingDevicesChange;
+
   defs := TStringList.Create;
   defs.Add('https://localhost:443');
+  defs.Add('');
   defs.Add('');
   defs.Add('');
   defs.Add('user-device');
@@ -177,6 +202,8 @@ begin
   end;
 
   defs.free;
+
+  VerifyTSLCB.Checked := AppConfig.ReadBoolean(VerifyTSLCB.Name, true);
 
   AuthOptsEditingDone(nil);
 
@@ -264,13 +291,98 @@ end;
 procedure TMainForm.AuthOptsEditingDone(Sender : TObject);
 begin
   CURLClient.Setts.Device := GetDevice;
+  CURLClient.Setts.SetProxy(GetProxy);
+  CURLClient.Setts.MetaData := GetMeta;
   CURLClient.Setts.Host   := GetHost;
   CURLClient.Setts.SID    := GetSID;
+end;
+
+procedure TMainForm.AuthOptsClick(Sender : TObject);
+begin
+
 end;
 
 procedure TMainForm.DelSelAndOlderBtnClick(Sender : TObject);
 begin
   DeleteSelected(true);
+end;
+
+procedure TMainForm.DeviceListDrawItem(Control : TWinControl; Index : Integer;
+  ARect : TRect; State : TOwnerDrawState);
+
+function FindDevice(const DN : String): integer;
+var i : integer;
+begin
+  Result := -1;
+  for i := 0 to FStreamingDevices.Count-1 do
+  begin
+    if SameText(FStreamingDevices[i], DN) then
+    begin
+      Result := i;
+      Exit;
+    end;
+  end;
+end;
+
+procedure DrawPic(imi : integer);
+var
+  B : TBitmap;
+begin
+  if imi >= 0 then begin
+    B := TBitmap.Create;
+    try
+      B.Width := 16;
+      B.Height := 16;
+      ImageList1.Getbitmap(imi, B);
+      DeviceList.Canvas.Draw(aRect.Left, aRect.Top, B);
+    finally
+      B.Free;
+    end;
+    aRect.Left := aRect.Left + 16;
+  end else
+    aRect.Left := aRect.Left + 16;
+end;
+
+var
+  k, imi : integer;
+  ts : TTextStyle;
+  S  : String;
+begin
+  S := DeviceList.Items[Index];
+  k := FindDevice(CURLClient.ExtractDeviceName(S));
+  if k >= 0 then
+    imi := 12 else
+    imi := -1;
+
+  with DeviceList.Canvas do
+  begin
+    ts := TextStyle;
+    ts.Alignment  := taLeftJustify;
+    ts.Layout     := tlCenter;
+    ts.Wordbreak  := false;
+    ts.SingleLine := True;
+    ts.Opaque     := false;
+
+    if odSelected in State then
+    begin
+      brush.Color := clBlack;
+      font.Color := clWhite;
+      pen.Color := clYellow;
+      pen.Style := psDot;
+    end else
+    begin
+      brush.Color := clWhite;
+      font.Color  := clBlack;
+      pen.Color   := brush.Color;
+      pen.Style   := psSolid;
+    end;
+
+    Rectangle(aRect);
+
+    DrawPic(imi);
+
+    DeviceList.Canvas.TextRect(aRect, aRect.Left+2, aRect.Top + 2, S, ts);
+  end;
 end;
 
 procedure TMainForm.FormDestroy(Sender : TObject);
@@ -280,12 +392,14 @@ begin
   begin
     AppConfig.WriteString(AuthOpts.Keys[i], AuthOpts.Cells[1, i]);
   end;
+  AppConfig.WriteBoolean(VerifyTSLCB.Name, VerifyTSLCB.Checked);
 
   Timer1.Enabled := false;
   LongTimer.Enabled := false;
   TaskTimer.Enabled := false;
 
   CURLClient.Free;
+  FStreamingDevices.Free;
 end;
 
 procedure TMainForm.LongTimerTimer(Sender : TObject);
@@ -302,8 +416,9 @@ procedure TMainForm.AuthToServerBtnClick(Sender : TObject);
 var
   aName, aPass : String;
 begin
-  aName := AuthOpts.Cells[1, 1];
-  aPass := AuthOpts.Cells[1, 2];
+  aName := AuthOpts.Cells[1, USER_POS];
+  aPass := AuthOpts.Cells[1, PWRD_POS];
+  CURLClient.VerifyTSL := VerifyTSLCB.Checked;
   CURLClient.Authorize(aName, aPass);
 end;
 
@@ -379,6 +494,8 @@ procedure TMainForm.RefreshDevicesBtnClick(Sender : TObject);
 begin
   DeviceList.Clear;
   CURLClient.UpdateDevices;
+  FStreamingDevices.Clear;
+  CURLClient.UpdateStreams;
 end;
 
 procedure TMainForm.CopyDeviceBtnClick(Sender : TObject);
@@ -421,6 +538,11 @@ begin
       FS.Free;
     end;
   end;
+end;
+
+procedure TMainForm.VerifyTSLCBChange(Sender : TObject);
+begin
+   CURLClient.VerifyTSL := VerifyTSLCB.Checked;
 end;
 
 procedure TMainForm.OnInitCURL(Sender : TObject);
@@ -481,6 +603,18 @@ begin
     DeviceList.Items.Add(aArr.Items[i].AsJSON);
   end;
   DeviceList.Items.EndUpdate;
+end;
+
+procedure TMainForm.OnSuccessUpdateStreams(aTask : THTTP2BackgroundTask;
+  aArr : TJSONArray);
+var i : integer;
+begin
+  FStreamingDevices.BeginUpdate;
+  for i := 0 to aArr.Count-1 do
+  begin
+    FStreamingDevices.Add(CURLClient.ExtractDeviceName(aArr.Items[i].AsJSON));
+  end;
+  FStreamingDevices.EndUpdate;
 end;
 
 procedure TMainForm.OnSuccessUpdateMsgs(aTask : THTTP2BackgroundTask;
@@ -790,24 +924,39 @@ begin
     THTTP2BackgroundTask(TStreamFrm(Sender).Data).Close;
 end;
 
+procedure TMainForm.StreamingDevicesChange(Sender : TObject);
+begin
+  DeviceList.Invalidate;
+end;
+
+function TMainForm.GetProxy : String;
+begin
+  Result := AuthOpts.Cells[1, PROXY_POS];
+end;
+
+function TMainForm.GetMeta : String;
+begin
+  Result := AuthOpts.Cells[1, META_POS];
+end;
+
 function TMainForm.GetDevice : String;
 begin
-  Result := AuthOpts.Cells[1, 3];
+  Result := AuthOpts.Cells[1, DEVICE_POS];
 end;
 
 function TMainForm.GetHost : String;
 begin
-  Result := AuthOpts.Cells[1, 0];
+  Result := AuthOpts.Cells[1, HOST_POS];
 end;
 
 function TMainForm.GetSID : String;
 begin
-  Result := AuthOpts.Cells[1, 4];
+  Result := AuthOpts.Cells[1, SID_POS];
 end;
 
 procedure TMainForm.OnSetSID(const AValue : String);
 begin
-  AuthOpts.Cells[1, 4] := AValue;
+  AuthOpts.Cells[1, SID_POS] := AValue;
 end;
 
 function TMainForm.GetSelectedDeviceName : String;
