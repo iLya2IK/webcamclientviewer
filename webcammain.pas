@@ -274,7 +274,7 @@ procedure TMainForm.LaunchStreamBtnClick(Sender : TObject);
 begin
   if not CURLClient.IsStreaming then
   begin
-    if CURLClient.LaunchOutStream then
+    if CURLClient.LaunchOutStream('RAW_JPEG', 400) then
     begin
       AddLog('Out stream launched');
     end else
