@@ -128,6 +128,8 @@ type
     FStreamingDevices : TStringList;
     procedure StreamingDevicesChange(Sender : TObject);
 
+    function FindStreamingDevice(const DN : String): integer;
+
     function GetSelectedDeviceName : String;
     function GetRidCol : Integer;
     procedure DeleteSelected(andolder : Boolean);
@@ -187,6 +189,7 @@ begin
 
   FStreamingDevices := TStringList.Create;
   FStreamingDevices.OnChange := @StreamingDevicesChange;
+  FStreamingDevices.OwnsObjects := true;
 
   defs := TStringList.Create;
   defs.Add('https://localhost:443');
@@ -208,6 +211,20 @@ begin
   AuthOptsEditingDone(nil);
 
   CURLClient.Start;
+end;
+
+function TMainForm.FindStreamingDevice(const DN : String): integer;
+var i : integer;
+begin
+  Result := -1;
+  for i := 0 to FStreamingDevices.Count-1 do
+  begin
+    if SameText(FStreamingDevices[i], DN) then
+    begin
+      Result := i;
+      Exit;
+    end;
+  end;
 end;
 
 procedure TMainForm.SendMsgBtnClick(Sender : TObject);
@@ -310,20 +327,6 @@ end;
 procedure TMainForm.DeviceListDrawItem(Control : TWinControl; Index : Integer;
   ARect : TRect; State : TOwnerDrawState);
 
-function FindDevice(const DN : String): integer;
-var i : integer;
-begin
-  Result := -1;
-  for i := 0 to FStreamingDevices.Count-1 do
-  begin
-    if SameText(FStreamingDevices[i], DN) then
-    begin
-      Result := i;
-      Exit;
-    end;
-  end;
-end;
-
 procedure DrawPic(imi : integer);
 var
   B : TBitmap;
@@ -349,7 +352,7 @@ var
   S  : String;
 begin
   S := DeviceList.Items[Index];
-  k := FindDevice(CURLClient.ExtractDeviceName(S));
+  k := FindStreamingDevice(CURLClient.ExtractDeviceName(S));
   if k >= 0 then
     imi := 12 else
     imi := -1;
@@ -607,12 +610,14 @@ end;
 
 procedure TMainForm.OnSuccessUpdateStreams(aTask : THTTP2BackgroundTask;
   aArr : TJSONArray);
-var i : integer;
+var o : TJSONData;
 begin
   FStreamingDevices.BeginUpdate;
-  for i := 0 to aArr.Count-1 do
+  while aArr.Count > 0 do
   begin
-    FStreamingDevices.Add(CURLClient.ExtractDeviceName(aArr.Items[i].AsJSON));
+    o := aArr.Extract(0);
+    if not (o is TJSONObject) then FreeAndNil(o);
+    FStreamingDevices.AddObject(CURLClient.ExtractDeviceName(o.AsJSON), o);
   end;
   FStreamingDevices.EndUpdate;
 end;
@@ -823,6 +828,9 @@ procedure TMainForm.OnAfterLaunchInOutStream(Sender : THTTP2BackgroundTask);
 var
   Tsk : THTTP2BackgroundTask;
   StrmWin : TStreamFrm;
+  i : integer;
+  o : TJSONObject;
+  d : TJSONData;
 begin
   Tsk := THTTP2BackgroundTask(Sender);
   Application.CreateForm(TStreamFrm, StrmWin);
@@ -830,6 +838,20 @@ begin
 
   StrmWin.Show;
   StrmWin.Data := Tsk;
+  if Sender is THTTP2BackgroundInStreamTask then
+  begin
+    i := FindStreamingDevice(THTTP2BackgroundInStreamTask(Sender).Device);
+    if i >= 0 then
+    begin
+      o := TJSONObject(FStreamingDevices.Objects[i]);
+      if assigned(o) then
+      begin
+        d := o.Find(cSUBPROTO);
+        if Assigned(d) then
+          StrmWin.SubFormat := d.AsString;
+      end;
+    end;
+  end;
   StrmWin.OnClose := @OnStrmWinClose;
 end;
 

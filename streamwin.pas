@@ -18,9 +18,11 @@ type
   private
     FData : TObject;
     FUpdates : Integer;
+    FFormat : String;
   public
     procedure UpdateFrame(aFrame : TCustomMemoryStream; rmStrm : Boolean = true);
     property Data : TObject read FData write FData;
+    property SubFormat : string read FFormat write FFormat;
   end;
 
 var
@@ -41,6 +43,7 @@ procedure TStreamFrm.UpdateFrame(aFrame : TCustomMemoryStream; rmStrm : Boolean
   );
 var
   jpg : TJPEGImage;
+  png : TPortableNetworkGraphic;
 begin
   if Assigned(aFrame) and
      (aFrame.Size > 6) then
@@ -48,12 +51,29 @@ begin
     Inc(FUpdates);
     Label1.Caption := Inttostr(FUpdates);
     aFrame.Position := 6;
-    Jpg := TJPEGImage.Create;
+
     try
-      Jpg.LoadFromStream(aFrame);
-      Image1.Picture.Jpeg := Jpg;
+      if (Length(SubFormat) = 0) or (pos('_JPEG', SubFormat) > 0) then
+      begin
+        Jpg := TJPEGImage.Create;
+        try
+          Jpg.LoadFromStream(aFrame);
+          Image1.Picture.Jpeg := Jpg;
+        finally
+          Jpg.Free;
+        end;
+      end else
+      if pos('_PNG', SubFormat) > 0 then
+      begin
+        png := TPortableNetworkGraphic.Create;
+        try
+          png.LoadFromStream(aFrame);
+          Image1.Picture.PNG := png;
+        finally
+          png.Free;
+        end;
+      end;
     finally
-      Jpg.Free;
       if rmStrm then  aFrame.Free;
     end;
   end;
