@@ -791,13 +791,35 @@ end;
 procedure TMainForm.OnSuccessRequestRecord(aData : TCustomMemoryStream);
 var
   Jpg : TJPEGImage;
+  png : TPortableNetworkGraphic;
+  sloaded : Boolean;
 begin
   Jpg := TJPEGImage.Create;
   try
-    Jpg.LoadFromStream(aData);
-    Image1.Picture.Jpeg := Jpg;
+    try
+      Jpg.LoadFromStream(aData);
+      Image1.Picture.Jpeg := Jpg;
+      sloaded := true;
+    except
+      on e : Exception do  sloaded := false;
+    end;
   finally
     Jpg.Free;
+  end;
+  if not sloaded then
+  begin
+    aData.Position := 0;
+    png := TPortableNetworkGraphic.Create;
+    try
+      try
+        png.LoadFromStream(aData);
+        Image1.Picture.PNG := png;
+      except
+
+      end;
+    finally
+      png.Free;
+    end;
   end;
 end;
 
