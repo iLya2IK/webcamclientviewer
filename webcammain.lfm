@@ -10,7 +10,7 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   ParentDoubleBuffered = False
-  LCLVersion = '2.2.2.0'
+  LCLVersion = '2.2.4.0'
   object Panel1: TPanel
     Left = 261
     Height = 562
@@ -173,56 +173,6 @@ object MainForm: TMainForm
               OnClick = LaunchStreamBtnClick
               ParentShowHint = False
               ShowHint = True
-            end
-          end
-          object Panel12: TPanel
-            Left = 32
-            Height = 144
-            Top = 0
-            Width = 280
-            Align = alClient
-            BevelOuter = bvNone
-            ClientHeight = 144
-            ClientWidth = 280
-            TabOrder = 1
-            object AuthOpts: TValueListEditor
-              Left = 0
-              Height = 121
-              Top = 0
-              Width = 280
-              Align = alClient
-              DefaultColWidth = 90
-              FixedCols = 0
-              RowCount = 7
-              TabOrder = 0
-              OnClick = AuthOptsClick
-              OnEditingDone = AuthOptsEditingDone
-              DisplayOptions = [doAutoColResize, doKeyColFixed]
-              Strings.Strings = (
-                'Server=https://localhost:8080'
-                'Proxy='
-                'User name=user'
-                'Password=111'
-                'Device=device_name'
-                'MetaData='
-                'SessionID='
-              )
-              ColWidths = (
-                90
-                175
-              )
-            end
-            object VerifyTSLCB: TCheckBox
-              Left = 0
-              Height = 23
-              Top = 121
-              Width = 280
-              Align = alBottom
-              Caption = 'Verify TSL'
-              Checked = True
-              OnChange = VerifyTSLCBChange
-              State = cbChecked
-              TabOrder = 1
             end
           end
         end
@@ -694,13 +644,6 @@ object MainForm: TMainForm
     OnTimer = Timer1Timer
     Left = 408
     Top = 328
-  end
-  object AppConfig: TJSONPropStorage
-    StoredValues = <>
-    JSONFileName = 'config.json'
-    Formatted = False
-    Left = 408
-    Top = 384
   end
   object LongTimer: TTimer
     Enabled = False

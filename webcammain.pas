@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, ValEdit,
-  ComCtrls, StdCtrls, Grids, JSONPropStorage, Buttons, ExtDlgs,
+  ComCtrls, StdCtrls, Grids, WCCurlClientControls, Buttons, ExtDlgs,
   fpjson, jsonparser,
   wccurlclient,
   ECommonObjs, Types, LCLType;
@@ -16,21 +16,17 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
-    AuthOpts : TValueListEditor;
     AuthToServerBtn : TToolButton;
-    VerifyTSLCB : TCheckBox;
     DeviceList : TListBox;
     DevicesAU : TCheckBox;
     Image1 : TImage;
     ImageList1 : TImageList;
-    AppConfig : TJSONPropStorage;
     Label1 : TLabel;
     Label2 : TLabel;
     Label3 : TLabel;
     Label4 : TLabel;
     Label5 : TLabel;
     OpenPictureDialog1: TOpenPictureDialog;
-    Panel12 : TPanel;
     RecordLabel : TLabel;
     LogMemo : TMemo;
     MsgContent : TValueListEditor;
@@ -75,8 +71,6 @@ type
     ToolButton2: TToolButton;
     LaunchStreamBtn : TToolButton;
     LaunchInStrm : TToolButton;
-    procedure AuthOptsClick(Sender : TObject);
-    procedure AuthOptsEditingDone(Sender : TObject);
     procedure DeleteSelectedBtnClick(Sender : TObject);
     procedure DelSelAndOlderBtnClick(Sender : TObject);
     procedure DeviceListDrawItem(Control : TWinControl; Index : Integer;
@@ -99,9 +93,10 @@ type
     procedure RefreshRecordsBtnClick(Sender : TObject);
     procedure RefreshMsgsBtnClick(Sender : TObject);
     procedure ToolButton2Click(Sender: TObject);
-    procedure VerifyTSLCBChange(Sender : TObject);
   private
     CURLClient : TWCCURLClient;
+    AppConfig  : TWCClientPropStorage;
+    AuthOpts   : TWCClientConfigEditor;
 
     procedure OnInitCURL(Sender : TObject);
     procedure OnConnectedChanged(aValue : Boolean);
@@ -134,10 +129,7 @@ type
     function GetRidCol : Integer;
     procedure DeleteSelected(andolder : Boolean);
 
-    function GetProxy : String;
-    function GetMeta : String;
     function GetDevice : String;
-    function GetHost : String;
     function GetSID : String;
   end;
 
@@ -150,20 +142,9 @@ uses LazUTF8, Clipbrd, configdlg, streamwin, wcwebcamconsts;
 
 {$R *.lfm}
 
-const HOST_POS = 0;
-      PROXY_POS = 1;
-      USER_POS = 2;
-      PWRD_POS = 3;
-      DEVICE_POS = 4;
-      META_POS = 5;
-      SID_POS = 6;
-
 { TMainForm }
 
 procedure TMainForm.FormCreate(Sender : TObject);
-var
-  defs : TStringList;
-  i : integer;
 begin
   CURLClient := TWCCURLClient.Create;
 
@@ -191,24 +172,17 @@ begin
   FStreamingDevices.OnChange := @StreamingDevicesChange;
   FStreamingDevices.OwnsObjects := true;
 
-  defs := TStringList.Create;
-  defs.Add('https://localhost:443');
-  defs.Add('');
-  defs.Add('');
-  defs.Add('');
-  defs.Add('user-device');
-  defs.Add('');
+  AppConfig := TWCClientPropStorage.Create(Self);
+  AppConfig.JSONFileName := 'config.json';
 
-  for i := 0 to defs.Count-1 do
-  begin
-    AuthOpts.Cells[1, i]:=AppConfig.ReadString(AuthOpts.Keys[i], defs[i]);
-  end;
-
-  defs.free;
-
-  VerifyTSLCB.Checked := AppConfig.ReadBoolean(VerifyTSLCB.Name, true);
-
-  AuthOptsEditingDone(nil);
+  AuthOpts := TWCClientConfigEditor.Create(Panel8);
+  AuthOpts.Parent := Panel8;
+  AuthOpts.Top := 2;
+  AuthOpts.Left := 64;
+  AuthOpts.Props := AppConfig;
+  AuthOpts.CURLClient := CURLClient;
+  AuthOpts.Align := alClient;
+  AuthOpts.Apply;
 
   CURLClient.Start;
 end;
@@ -305,20 +279,6 @@ begin
   DeleteSelected(false);
 end;
 
-procedure TMainForm.AuthOptsEditingDone(Sender : TObject);
-begin
-  CURLClient.Setts.Device := GetDevice;
-  CURLClient.Setts.SetProxy(GetProxy);
-  CURLClient.Setts.MetaData := GetMeta;
-  CURLClient.Setts.Host   := GetHost;
-  CURLClient.Setts.SID    := GetSID;
-end;
-
-procedure TMainForm.AuthOptsClick(Sender : TObject);
-begin
-
-end;
-
 procedure TMainForm.DelSelAndOlderBtnClick(Sender : TObject);
 begin
   DeleteSelected(true);
@@ -389,13 +349,8 @@ begin
 end;
 
 procedure TMainForm.FormDestroy(Sender : TObject);
-var i : integer;
 begin
-  for i := 0 to AuthOpts.RowCount-1 do
-  begin
-    AppConfig.WriteString(AuthOpts.Keys[i], AuthOpts.Cells[1, i]);
-  end;
-  AppConfig.WriteBoolean(VerifyTSLCB.Name, VerifyTSLCB.Checked);
+  AuthOpts.SaveProps;
 
   Timer1.Enabled := false;
   LongTimer.Enabled := false;
@@ -419,9 +374,9 @@ procedure TMainForm.AuthToServerBtnClick(Sender : TObject);
 var
   aName, aPass : String;
 begin
-  aName := AuthOpts.Cells[1, USER_POS];
-  aPass := AuthOpts.Cells[1, PWRD_POS];
-  CURLClient.VerifyTSL := VerifyTSLCB.Checked;
+  aName := AuthOpts.UserName;
+  aPass := AuthOpts.Password;
+  CURLClient.VerifyTSL := AuthOpts.VerifyTLS;
   CURLClient.Authorize(aName, aPass);
 end;
 
@@ -541,11 +496,6 @@ begin
       FS.Free;
     end;
   end;
-end;
-
-procedure TMainForm.VerifyTSLCBChange(Sender : TObject);
-begin
-   CURLClient.VerifyTSL := VerifyTSLCB.Checked;
 end;
 
 procedure TMainForm.OnInitCURL(Sender : TObject);
@@ -973,34 +923,19 @@ begin
   DeviceList.Invalidate;
 end;
 
-function TMainForm.GetProxy : String;
-begin
-  Result := AuthOpts.Cells[1, PROXY_POS];
-end;
-
-function TMainForm.GetMeta : String;
-begin
-  Result := AuthOpts.Cells[1, META_POS];
-end;
-
 function TMainForm.GetDevice : String;
 begin
-  Result := AuthOpts.Cells[1, DEVICE_POS];
-end;
-
-function TMainForm.GetHost : String;
-begin
-  Result := AuthOpts.Cells[1, HOST_POS];
+  Result := AuthOpts.Device;
 end;
 
 function TMainForm.GetSID : String;
 begin
-  Result := AuthOpts.Cells[1, SID_POS];
+  Result := AuthOpts.SID;
 end;
 
 procedure TMainForm.OnSetSID(const AValue : String);
 begin
-  AuthOpts.Cells[1, SID_POS] := AValue;
+  AuthOpts.SID := AValue;
 end;
 
 function TMainForm.GetSelectedDeviceName : String;
